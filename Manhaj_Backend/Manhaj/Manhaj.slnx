@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Manhaj.Api/Manhaj.Api.csproj" />
+  <Project Path="Manhaj.Application/Manhaj.Application.csproj" />
+  <Project Path="Manhaj.Domain/Manhaj.Domain.csproj" />
+  <Project Path="Manhaj.Infrastructure/Manhaj.Infrastructure.csproj" />
+</Solution>
