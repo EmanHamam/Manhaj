@@ -427,3 +427,45 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# ---- Secrets & local config ----
+.env
+.env.*
+!.env.example
+*.pfx
+*.key
+appsettings.Local.json
+appsettings.*.Local.json
+
+# ---- .NET ----
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+.vs/
+*.nupkg
+TestResults/
+coverage/
+*.trx
+*.coverage
+
+# ---- Node / Angular ----
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+.eslintcache
+
+# ---- Data & generated artefacts ----
+eval/results/*.json
+!eval/results/.gitkeep
+corpus/.cache/
+uploads/
+*.db
+*.sqlite
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
