@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+ 
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Detect solution
+        id: detect
+        run: |
+          if [ -f backend/Manhaj.sln ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::backend/Manhaj.sln not present yet - skipping build (scaffolding phase)"
+          fi
+
+      - uses: actions/setup-dotnet@v6.0.0
+        if: steps.detect.outputs.present == 'true'
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        if: steps.detect.outputs.present == 'true'
+        run: dotnet restore backend/Manhaj.sln
+
+      - name: Format check
+        if: steps.detect.outputs.present == 'true'
+        run: dotnet format backend/Manhaj.sln --verify-no-changes --severity warn
+
+      - name: Build
+        if: steps.detect.outputs.present == 'true'
+        run: dotnet build backend/Manhaj.sln --no-restore -warnaserror
+
+      - name: Test
+        if: steps.detect.outputs.present == 'true'
+        run: dotnet test backend/Manhaj.sln --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.detect.outputs.present == 'true' && always()
+        with:
+          name: backend-test-results
+          path: '**/*.trx'
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # frontend
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Detect workspace
+        id: detect
+        run: |
+          if [ -f frontend/package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::frontend/package.json not present yet - skipping build (scaffolding phase)"
+          fi
+
+      - uses: actions/setup-node@v7.0.0
+        if: steps.detect.outputs.present == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+        if: steps.detect.outputs.present == 'true'
+        working-directory: frontend
+
+      - run: npm run lint --if-present
+        if: steps.detect.outputs.present == 'true'
+        working-directory: frontend
+
+      - run: npm run build --if-present
+        if: steps.detect.outputs.present == 'true'
+        working-directory: frontend
+
+      - run: npm run test:ci --if-present
+        if: steps.detect.outputs.present == 'true'
+        working-directory: frontend
+
+  
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0   # full history - required for meaningful secret scanning
+
+      - name: Secret scan (gitleaks, full history)
+        uses: gitleaks/gitleaks-action@v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dependency review
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
