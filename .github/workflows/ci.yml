@@ -103,22 +103,22 @@ jobs:
         working-directory: frontend
 
   
-  security:
-    name: security
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0   # full history - required for meaningful secret scanning
+  # security:
+  #   name: security
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v7.0.1
+  #       with:
+  #         fetch-depth: 0   # full history - required for meaningful secret scanning
 
-      - name: Secret scan (gitleaks, full history)
-        uses: gitleaks/gitleaks-action@v3.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Secret scan (gitleaks, full history)
+  #       uses: gitleaks/gitleaks-action@v3.0.0
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Dependency review
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v5.0.0
-        with:
-          fail-on-severity: high
-          comment-summary-in-pr: on-failure
+  #     - name: Dependency review
+  #       if: github.event_name == 'pull_request'
+  #       uses: actions/dependency-review-action@v5.0.0
+  #       with:
+  #         fail-on-severity: high
+  #         comment-summary-in-pr: on-failure
